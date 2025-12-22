@@ -250,10 +250,12 @@ def create_ui():
         gr.Markdown(
             """
         <div style="background: linear-gradient(135deg, #004B87 0%, #003366 100%); padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-            <h1 style="color: #FFB81C; text-align: center; margin: 0;">🤖 RAG Evaluation System — UTA HR Policies</h1>
-            <p style="color: white; text-align: center; margin-top: 10px; font-size: 16px;">
-                <strong>Integrated Retrieval-Augmented Generation Pipeline</strong><br>
-                This tool combines FAISS vector retrieval with OpenAI LLM generation to answer HR policy questions.
+            <h1 style="color: #FFFFFF; text-align: center; margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🎓 UTA Policies Agent</h1>
+            <p style="color: #FFB81C; text-align: center; margin-top: 12px; font-size: 18px; font-weight: 600;">
+                Intelligent HR Policy Assistant
+            </p>
+            <p style="color: #E8F1F8; text-align: center; margin-top: 8px; font-size: 14px; line-height: 1.5;">
+                Powered by AI-driven retrieval and generation to answer your HR policy questions instantly
             </p>
         </div>
         """
@@ -339,10 +341,10 @@ def create_ui():
         
         ### 🧪 System Features
         
-        - **Real LLM Integration**: Uses OpenAI GPT-4o-mini for generation
-        - **FAISS Retrieval**: Fast vector similarity search across 91 policy chunks
-        - **Failure Logging**: Automatically logs issues to `logs/rag_failures.jsonl`
-        - **Diagnostic Metrics**: Detailed evaluation of retrieval and answer quality
+        - **Intelligent Retrieval**: FAISS vector search across 91+ policy documents
+        - **AI-Powered Generation**: OpenAI GPT-4o-mini for accurate responses
+        - **Quality Assurance**: Automatic failure logging and diagnostics
+        - **Real-time Evaluation**: Detailed metrics on retrieval and answer quality
         
         ### 📋 Example Questions
         
@@ -353,9 +355,13 @@ def create_ui():
         
         ---
         
-        <div style="text-align: center; color: #004B87; margin-top: 20px; font-size: 12px;">
-            <strong>University of Texas at Arlington HR Policies Assistant</strong><br>
-            Powered by FAISS Vector Retrieval & OpenAI GPT-4o-mini
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%); border-radius: 8px; margin-top: 20px;">
+            <p style="color: #004B87; margin: 8px 0; font-weight: 700; font-size: 14px;">
+                🎓 University of Texas at Arlington HR Policies Agent
+            </p>
+            <p style="color: #666666; margin: 5px 0; font-size: 12px;">
+                Powered by Advanced AI Retrieval & Generative Technology
+            </p>
         </div>
         """
         )
@@ -369,6 +375,8 @@ def create_ui():
             --uta-gold: #FFB81C;
             --uta-white: #FFFFFF;
             --uta-gray: #4A4A4A;
+            --text-dark: #1A1A1A;
+            --text-light: #FFFFFF;
         }
         
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -386,79 +394,94 @@ def create_ui():
             box-shadow: 0 4px 8px rgba(0, 75, 135, 0.3) !important;
         }
         
-        /* Tab styling */
+        /* Tab styling with better contrast */
         .gr-tabs .tabs {
             border-bottom: 3px solid var(--uta-blue) !important;
         }
         
         .gr-tabs button {
             border-bottom: 3px solid transparent !important;
+            color: var(--uta-gray) !important;
+            font-weight: 500 !important;
         }
         
         .gr-tabs button.selected {
             border-bottom: 3px solid var(--uta-gold) !important;
             color: var(--uta-blue) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Headers and labels with proper contrast */
+        .gr-form-label {
+            color: var(--uta-navy) !important;
             font-weight: 600 !important;
         }
         
-        /* Headers and labels */
-        .gr-form-label {
+        h1, h2, h3, h4, h5, h6 { 
             color: var(--uta-navy) !important;
-            font-weight: 500 !important;
+            font-weight: 700 !important;
         }
         
-        h1, h2, h3 { color: var(--uta-navy) !important; }
-        
-        /* Answer box - light blue */
+        /* Answer box - light blue background with dark text */
         .answer-box { 
             background: linear-gradient(135deg, #E8F1F8 0%, #D4E8F2 100%);
             padding: 15px;
             border-radius: 8px;
             border-left: 5px solid var(--uta-blue);
+            color: var(--text-dark) !important;
         }
         
-        /* Context box - light gold */
+        /* Context box - light gold background with dark text */
         .context-box { 
             background: linear-gradient(135deg, #FFF9E6 0%, #FFFACD 100%);
             padding: 15px;
             border-radius: 8px;
             border-left: 5px solid var(--uta-gold);
+            color: var(--text-dark) !important;
         }
         
-        /* Warning box - light red */
+        /* Warning box - light red background with dark text */
         .warning-box { 
             background: linear-gradient(135deg, #FFE4E1 0%, #FFD7D7 100%);
             padding: 15px;
             border-radius: 8px;
             border-left: 5px solid #D32F2F;
             color: #8b0000;
-            font-weight: 500;
+            font-weight: 600;
         }
         
-        /* Evaluation/Diagnostics box - light blue */
+        /* Evaluation/Diagnostics box - light blue background with dark text */
         .eval-box { 
             background: linear-gradient(135deg, #E8F1F8 0%, #D4E8F2 100%);
             padding: 15px;
             border-radius: 8px;
             border-left: 5px solid var(--uta-blue);
             font-family: 'Courier New', monospace;
+            color: var(--text-dark) !important;
         }
         
         /* Code blocks */
         .gr-code {
             background: #f5f5f5 !important;
             border: 1px solid var(--uta-blue) !important;
+            color: var(--text-dark) !important;
         }
         
-        /* Textbox borders */
+        /* Textbox borders and text */
         .gr-textbox input, .gr-textbox textarea {
-            border: 1px solid var(--uta-blue) !important;
+            border: 2px solid var(--uta-blue) !important;
             border-radius: 6px !important;
+            color: var(--text-dark) !important;
+            font-size: 14px !important;
+        }
+        
+        .gr-textbox input::placeholder, .gr-textbox textarea::placeholder {
+            color: #A0A0A0 !important;
         }
         
         .gr-textbox input:focus, .gr-textbox textarea:focus {
             border-color: var(--uta-gold) !important;
-            box-shadow: 0 0 0 3px rgba(255, 184, 28, 0.1) !important;
+            box-shadow: 0 0 0 4px rgba(255, 184, 28, 0.15) !important;
         }
         
         /* Slider styling */
@@ -466,7 +489,12 @@ def create_ui():
             accent-color: var(--uta-blue) !important;
         }
         
-        /* Table styling */
+        .gr-slider .label {
+            color: var(--uta-navy) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Table styling with better contrast */
         .gr-dataframe {
             border: 1px solid var(--uta-blue) !important;
         }
@@ -474,31 +502,62 @@ def create_ui():
         .gr-dataframe thead {
             background: linear-gradient(135deg, var(--uta-blue) 0%, var(--uta-navy) 100%) !important;
             color: white !important;
+            font-weight: 700 !important;
         }
         
-        .gr-dataframe tr:hover {
+        .gr-dataframe tbody tr {
+            background: white !important;
+            color: var(--text-dark) !important;
+        }
+        
+        .gr-dataframe tbody tr:hover {
             background: #F0F8FF !important;
         }
         
-        /* Footer styling */
+        /* Footer and markdown text */
         .gr-markdown {
-            color: var(--uta-gray) !important;
+            color: var(--text-dark) !important;
         }
         
         .gr-markdown h3 {
-            color: var(--uta-blue) !important;
-            border-bottom: 2px solid var(--uta-gold) !important;
-            padding-bottom: 8px !important;
+            color: var(--uta-navy) !important;
+            border-bottom: 3px solid var(--uta-gold) !important;
+            padding-bottom: 12px !important;
+            margin-top: 20px !important;
+            font-weight: 700 !important;
         }
         
-        /* Example questions section */
-        .gr-markdown ul {
-            color: var(--uta-gray) !important;
+        .gr-markdown ul, .gr-markdown ol {
+            color: var(--text-dark) !important;
         }
         
         .gr-markdown li {
-            margin: 8px 0 !important;
-            line-height: 1.6 !important;
+            margin: 10px 0 !important;
+            line-height: 1.7 !important;
+            color: var(--text-dark) !important;
+        }
+        
+        .gr-markdown strong {
+            color: var(--uta-navy) !important;
+            font-weight: 700 !important;
+        }
+        
+        .gr-markdown a {
+            color: var(--uta-blue) !important;
+            font-weight: 600 !important;
+        }
+        
+        .gr-markdown a:hover {
+            color: var(--uta-gold) !important;
+        }
+        
+        /* Row and column spacing */
+        .gr-row {
+            gap: 12px !important;
+        }
+        
+        .gr-column {
+            gap: 12px !important;
         }
         """,
     }
