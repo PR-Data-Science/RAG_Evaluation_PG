@@ -243,18 +243,19 @@ def run_rag_pipeline(query: str, top_k: int = 5) -> Tuple[str, str, List[List[An
 
 
 def create_ui():
-    """Build and launch the RAG evaluation Gradio interface."""
+    """Build and launch the RAG evaluation Gradio interface with UTA brand colors."""
     with gr.Blocks(
         title="RAG Evaluation UI - UTA HR Policies",
     ) as demo:
         gr.Markdown(
             """
-        # 🤖 RAG Evaluation System — UTA HR Policies
-        
-        **Integrated Retrieval-Augmented Generation Pipeline**
-        
-        This tool combines FAISS vector retrieval with OpenAI LLM generation to answer HR policy questions.
-        Use it to test retrieval quality, context relevance, and answer accuracy.
+        <div style="background: linear-gradient(135deg, #004B87 0%, #003366 100%); padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+            <h1 style="color: #FFB81C; text-align: center; margin: 0;">🤖 RAG Evaluation System — UTA HR Policies</h1>
+            <p style="color: white; text-align: center; margin-top: 10px; font-size: 16px;">
+                <strong>Integrated Retrieval-Augmented Generation Pipeline</strong><br>
+                This tool combines FAISS vector retrieval with OpenAI LLM generation to answer HR policy questions.
+            </p>
+        </div>
         """
         )
 
@@ -349,17 +350,156 @@ def create_ui():
         - What are the eligibility requirements for Family and Medical Leave?
         - How do I apply for leave?
         - What policies cover performance evaluations?
+        
+        ---
+        
+        <div style="text-align: center; color: #004B87; margin-top: 20px; font-size: 12px;">
+            <strong>University of Texas at Arlington HR Policies Assistant</strong><br>
+            Powered by FAISS Vector Retrieval & OpenAI GPT-4o-mini
+        </div>
         """
         )
 
     return demo, {
         "theme": gr.themes.Soft(),
         "css": """
-        .header { text-align: center; padding: 20px; }
-        .answer-box { background: #f0f8ff; padding: 15px; border-radius: 8px; }
-        .context-box { background: #fffacd; padding: 15px; border-radius: 8px; }
-        .warning-box { background: #ffe4e1; padding: 15px; border-radius: 8px; color: #8b0000; }
-        .eval-box { background: #e6f3ff; padding: 15px; border-radius: 8px; font-family: monospace; }
+        :root {
+            --uta-blue: #004B87;
+            --uta-navy: #003366;
+            --uta-gold: #FFB81C;
+            --uta-white: #FFFFFF;
+            --uta-gray: #4A4A4A;
+        }
+        
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Primary button styling with UTA blue */
+        .gr-button-primary {
+            background: linear-gradient(135deg, var(--uta-blue) 0%, var(--uta-navy) 100%) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+        }
+        
+        .gr-button-primary:hover {
+            background: linear-gradient(135deg, var(--uta-navy) 0%, #002040 100%) !important;
+            box-shadow: 0 4px 8px rgba(0, 75, 135, 0.3) !important;
+        }
+        
+        /* Tab styling */
+        .gr-tabs .tabs {
+            border-bottom: 3px solid var(--uta-blue) !important;
+        }
+        
+        .gr-tabs button {
+            border-bottom: 3px solid transparent !important;
+        }
+        
+        .gr-tabs button.selected {
+            border-bottom: 3px solid var(--uta-gold) !important;
+            color: var(--uta-blue) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Headers and labels */
+        .gr-form-label {
+            color: var(--uta-navy) !important;
+            font-weight: 500 !important;
+        }
+        
+        h1, h2, h3 { color: var(--uta-navy) !important; }
+        
+        /* Answer box - light blue */
+        .answer-box { 
+            background: linear-gradient(135deg, #E8F1F8 0%, #D4E8F2 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--uta-blue);
+        }
+        
+        /* Context box - light gold */
+        .context-box { 
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFFACD 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--uta-gold);
+        }
+        
+        /* Warning box - light red */
+        .warning-box { 
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFD7D7 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #D32F2F;
+            color: #8b0000;
+            font-weight: 500;
+        }
+        
+        /* Evaluation/Diagnostics box - light blue */
+        .eval-box { 
+            background: linear-gradient(135deg, #E8F1F8 0%, #D4E8F2 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--uta-blue);
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Code blocks */
+        .gr-code {
+            background: #f5f5f5 !important;
+            border: 1px solid var(--uta-blue) !important;
+        }
+        
+        /* Textbox borders */
+        .gr-textbox input, .gr-textbox textarea {
+            border: 1px solid var(--uta-blue) !important;
+            border-radius: 6px !important;
+        }
+        
+        .gr-textbox input:focus, .gr-textbox textarea:focus {
+            border-color: var(--uta-gold) !important;
+            box-shadow: 0 0 0 3px rgba(255, 184, 28, 0.1) !important;
+        }
+        
+        /* Slider styling */
+        .gr-slider input {
+            accent-color: var(--uta-blue) !important;
+        }
+        
+        /* Table styling */
+        .gr-dataframe {
+            border: 1px solid var(--uta-blue) !important;
+        }
+        
+        .gr-dataframe thead {
+            background: linear-gradient(135deg, var(--uta-blue) 0%, var(--uta-navy) 100%) !important;
+            color: white !important;
+        }
+        
+        .gr-dataframe tr:hover {
+            background: #F0F8FF !important;
+        }
+        
+        /* Footer styling */
+        .gr-markdown {
+            color: var(--uta-gray) !important;
+        }
+        
+        .gr-markdown h3 {
+            color: var(--uta-blue) !important;
+            border-bottom: 2px solid var(--uta-gold) !important;
+            padding-bottom: 8px !important;
+        }
+        
+        /* Example questions section */
+        .gr-markdown ul {
+            color: var(--uta-gray) !important;
+        }
+        
+        .gr-markdown li {
+            margin: 8px 0 !important;
+            line-height: 1.6 !important;
+        }
         """,
     }
 
