@@ -1,0 +1,29 @@
+{
+  "mock-1": {
+    "text": "Sample document 1 about HR policies",
+    "source": "mock.pdf",
+    "page": 1,
+    "chunk_index": 0,
+    "chunk_size": null,
+    "total_chunks": null,
+    "custom_metadata": {}
+  },
+  "mock-2": {
+    "text": "Sample document 2 about benefits",
+    "source": "mock.pdf",
+    "page": 2,
+    "chunk_index": 1,
+    "chunk_size": null,
+    "total_chunks": null,
+    "custom_metadata": {}
+  },
+  "mock-3": {
+    "text": "Sample document 3 about leave policies",
+    "source": "mock.pdf",
+    "page": 3,
+    "chunk_index": 2,
+    "chunk_size": null,
+    "total_chunks": null,
+    "custom_metadata": {}
+  }
+}
