@@ -250,7 +250,7 @@ def create_ui():
         gr.Markdown(
             """
         <div style="background: linear-gradient(135deg, #004B87 0%, #003366 100%); padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-            <h1 style="color: #FFFFFF; text-align: center; margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🎓 UTA Policies Agent</h1>
+            <h1 style="color: white; text-align: center; margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); font-weight: 800; letter-spacing: 0.5px;">UTA Policies Agent</h1>
             <p style="color: #FFB81C; text-align: center; margin-top: 12px; font-size: 18px; font-weight: 600;">
                 Intelligent HR Policy Assistant
             </p>

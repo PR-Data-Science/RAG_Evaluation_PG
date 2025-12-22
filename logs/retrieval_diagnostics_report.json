@@ -1,0 +1,141 @@
+{
+  "stability_test": {
+    "query": "What is the Family Leave Pool Policy?",
+    "runs": 10,
+    "top_k": 5,
+    "result_sets": [
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ],
+      [
+        "a8cef204-e84a-406d-913a-17bb8bb200c0",
+        "37e62be0-8c28-4244-bd0b-20cc7394d2bc",
+        "9727d000-1825-4b7a-8a85-c0fda96db4ea",
+        "b04848f6-7f05-4f28-ae80-744584bee44f",
+        "4b0eac80-abca-40cc-ac42-9e22ea06c927"
+      ]
+    ],
+    "jaccard_similarities": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "avg_overlap": 1.0,
+    "std_overlap": 0.0,
+    "stability_score": 1.0
+  },
+  "distance_analysis": {
+    "query_doc_id": "fc6aca0a-8adc-4ce7-a0fb-f22876d4aefc",
+    "mean_similarity": -0.0010249244514852762,
+    "std_similarity": 0.01520270574837923,
+    "expected_std_random": 0.018042195912175808,
+    "std_ratio": 0.8426194805987922,
+    "min_similarity": -0.03976958245038986,
+    "max_similarity": 0.03549487888813019,
+    "has_semantic_signal": 0,
+    "sample_size": 50
+  },
+  "hard_assertion_passed": 0
+}

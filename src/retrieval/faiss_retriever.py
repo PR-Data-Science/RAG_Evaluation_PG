@@ -2,14 +2,51 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import faiss
 import numpy as np
+from dotenv import load_dotenv
+
+# Load .env file at module import
+load_dotenv()
+
+# Set up logging
+LOGGER = logging.getLogger(__name__)
+
+# EMBEDDING MODE SWITCH (CRITICAL FOR SAFE ROLLOUT)
+# Set via environment variable: EMBEDDING_MODE="mock" or EMBEDDING_MODE="openai"
+# Default to "mock" for backward compatibility during testing
+EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "mock").lower()
+
+if EMBEDDING_MODE not in ("mock", "openai"):
+    LOGGER.error(f"Invalid EMBEDDING_MODE: {EMBEDDING_MODE}. Must be 'mock' or 'openai'")
+    raise ValueError(f"EMBEDDING_MODE must be 'mock' or 'openai', got '{EMBEDDING_MODE}'")
+
+LOGGER.info(f"FAISS retriever initialized with EMBEDDING_MODE='{EMBEDDING_MODE}'")
+
+# Lazy-load OpenAI client only if needed
+_openai_client = None
 
 
-INDEX_FILENAME_CANDIDATES = [Path("faiss_index.index"), Path("faiss_index") / "faiss_index.index"]
+def _get_openai_client():
+    """Lazy-load OpenAI client only in openai mode."""
+    global _openai_client
+    if _openai_client is None:
+        if EMBEDDING_MODE != "openai":
+            raise RuntimeError("OpenAI client requested but EMBEDDING_MODE != 'openai'")
+        try:
+            from src.embeddings.openai_embeddings import OpenAIEmbeddingClient
+            _openai_client = OpenAIEmbeddingClient()
+        except ImportError:
+            raise ImportError("Could not import OpenAI embedding client. Check that src/embeddings/openai_embeddings.py exists.")
+    return _openai_client
+
+
+INDEX_FILENAME_CANDIDATES = [Path("faiss_index_openai.index"), Path("faiss_index.index"), Path("faiss_index") / "faiss_index.index"]
 DOCUMENTS_PATH = Path("temp_storage") / "03_embedded_documents.json"
 METADATA_PATH = Path("temp_storage") / "04_metadata_mapping.json"
 EMBED_DIM = 3072
@@ -90,40 +127,65 @@ def load_retrieval_assets(index_path: Path | None = None) -> Tuple[faiss.Index, 
 
 
 def embed_query(query: str) -> np.ndarray:
-    """Create a deterministic, mock embedding for `query`.
+    """Create embedding for `query` using configured mode (mock or openai).
 
-    This currently uses a query-hash-derived RNG seed to produce a reproducible
-    random vector of length `EMBED_DIM`.
-
-    NOTE: This will be replaced with OpenAI embeddings later.
+    - "mock": hash-derived deterministic random vector (for testing)
+    - "openai": API-based semantic embedding (text-embedding-3-large)
     """
-    # Deterministic seed from query hash
-    h = hashlib.sha256(query.encode("utf-8")).hexdigest()
-    seed = int(h[:16], 16) % (2**31 - 1)
-    rng = np.random.default_rng(seed)
+    if EMBEDDING_MODE == "openai":
+        # Use OpenAI embeddings
+        client = _get_openai_client()
+        emb = client.embed_text(query)
+        vec = np.array(emb, dtype=np.float32)
+        # Normalize to unit length for cosine-like inner product
+        vec = vec.reshape(1, -1).astype(np.float32)
+        faiss.normalize_L2(vec)
+        return vec[0]
+    else:
+        # Deterministic seed from query hash (mock mode)
+        h = hashlib.sha256(query.encode("utf-8")).hexdigest()
+        seed = int(h[:16], 16) % (2**31 - 1)
+        rng = np.random.default_rng(seed)
 
-    vec = rng.standard_normal(EMBED_DIM, dtype=np.float32)
-    # Normalize to unit length because FAISS index was built on normalized vectors
-    vec = vec.reshape(1, -1).astype(np.float32)
-    faiss.normalize_L2(vec)
-    return vec[0]
+        vec = rng.standard_normal(EMBED_DIM, dtype=np.float32)
+        # Normalize to unit length because FAISS index was built on normalized vectors
+        vec = vec.reshape(1, -1).astype(np.float32)
+        faiss.normalize_L2(vec)
+        return vec[0]
 
 
 def embed_from_document(doc: Dict[str, Any]) -> np.ndarray:
-    """Create a deterministic mock embedding for a document.
+    """Create embedding for a document using configured mode.
 
-    Uses the document `id` or `text_preview` (fallback) as the basis
-    for a reproducible embedding. This allows building an index when
-    the stored embedding arrays are not present (common in learning/demo runs).
+    - "mock": hash-derived deterministic random vector
+    - "openai": API-based semantic embedding (uses stored embedding if available)
     """
-    seed_source = doc.get("id") or doc.get("text_preview") or json.dumps(doc, sort_keys=True)
-    h = hashlib.sha256(str(seed_source).encode("utf-8")).hexdigest()
-    seed = int(h[:16], 16) % (2**31 - 1)
-    rng = np.random.default_rng(seed)
-    vec = rng.standard_normal(EMBED_DIM, dtype=np.float32)
-    vec = vec.reshape(1, -1).astype(np.float32)
-    faiss.normalize_L2(vec)
-    return vec[0]
+    if EMBEDDING_MODE == "openai":
+        # In OpenAI mode, use stored embedding if available (from rebuild script)
+        if "embedding" in doc:
+            vec = np.array(doc["embedding"], dtype=np.float32)
+            vec = vec.reshape(1, -1).astype(np.float32)
+            faiss.normalize_L2(vec)
+            return vec[0]
+        else:
+            # Fallback: generate on the fly (should not happen if rebuild script ran correctly)
+            client = _get_openai_client()
+            text = _get_text_from_doc(doc)
+            emb = client.embed_text(text)
+            vec = np.array(emb, dtype=np.float32)
+            vec = vec.reshape(1, -1).astype(np.float32)
+            faiss.normalize_L2(vec)
+            return vec[0]
+    else:
+        # Mock mode: deterministic embedding based on doc id
+        seed_source = doc.get("id") or doc.get("text_preview") or json.dumps(doc, sort_keys=True)
+        h = hashlib.sha256(str(seed_source).encode("utf-8")).hexdigest()
+        seed = int(h[:16], 16) % (2**31 - 1)
+        rng = np.random.default_rng(seed)
+        vec = rng.standard_normal(EMBED_DIM, dtype=np.float32)
+        vec = vec.reshape(1, -1).astype(np.float32)
+        faiss.normalize_L2(vec)
+        return vec[0]
 
 
 def _get_text_from_doc(doc: Dict[str, Any]) -> str:
@@ -245,6 +307,140 @@ def audit_retrieval(results: List[Dict[str, Any]]) -> None:
         print("WARNING: Average similarity is low — results may not be relevant. Possible causes: mock embeddings, wrong normalization, or missing context.")
     elif avg_dist < 0.5:
         print("NOTE: Similarity is moderate. Consider increasing number of retrieved chunks or improving embeddings.")
+
+
+def assert_retrieval_sanity(
+    results: List[Dict[str, Any]],
+    query: str,
+    required_keywords: List[str] = None,
+) -> None:
+    """Validate retrieval results and crash loudly if something is wrong.
+
+    Args:
+        results: Retrieved documents from retrieve_top_k()
+        query: Original query string
+        required_keywords: Optional list of keywords that should appear in retrieved docs
+    
+    Raises:
+        AssertionError: If any validation fails (crashes loudly as intended)
+    """
+    if not results:
+        error_msg = (
+            f"\n{'='*80}\n"
+            f"❌ RETRIEVAL SANITY CHECK FAILED: ZERO RESULTS\n"
+            f"{'='*80}\n"
+            f"Query: {query}\n"
+            f"Retrieved: 0 documents\n"
+            f"\nThis indicates either:\n"
+            f"1. FAISS index is empty or corrupted\n"
+            f"2. No documents exist in the knowledge base\n"
+            f"3. Query formatting issue\n"
+            f"{'='*80}\n"
+        )
+        LOGGER.error(error_msg)
+        raise AssertionError(error_msg)
+
+    # Validate result structure
+    required_keys = {"rank", "distance", "document_id", "text_preview", "metadata"}
+    for i, result in enumerate(results):
+        missing_keys = required_keys - set(result.keys())
+        if missing_keys:
+            error_msg = (
+                f"\n{'='*80}\n"
+                f"❌ RETRIEVAL SANITY CHECK FAILED: MALFORMED RESULT\n"
+                f"{'='*80}\n"
+                f"Result {i}: Missing keys {missing_keys}\n"
+                f"Keys present: {set(result.keys())}\n"
+                f"{'='*80}\n"
+            )
+            LOGGER.error(error_msg)
+            raise AssertionError(error_msg)
+
+    # Check for NaN distances
+    for i, result in enumerate(results):
+        if not isinstance(result.get("distance"), (int, float)):
+            error_msg = (
+                f"\n{'='*80}\n"
+                f"❌ RETRIEVAL SANITY CHECK FAILED: INVALID DISTANCE\n"
+                f"{'='*80}\n"
+                f"Result {i}: distance={result.get('distance')} (type: {type(result.get('distance'))})\n"
+                f"Expected: float\n"
+                f"{'='*80}\n"
+            )
+            LOGGER.error(error_msg)
+            raise AssertionError(error_msg)
+
+    # Check for document content
+    has_content = any(
+        r.get("text_preview") and len(str(r.get("text_preview", ""))) > 10
+        for r in results
+    )
+    if not has_content:
+        LOGGER.warning(
+            f"WARNING: Retrieved {len(results)} results but none have substantial text content. "
+            f"Check if documents are properly loaded."
+        )
+
+    # Check for metadata
+    has_metadata = any(r.get("metadata") for r in results)
+    if not has_metadata:
+        LOGGER.warning(
+            f"WARNING: Retrieved {len(results)} results but none have metadata. "
+            f"This may indicate metadata mapping issues."
+        )
+
+    LOGGER.debug(f"✓ Retrieval sanity check passed ({len(results)} results)")
+
+
+def assert_relevant_retrieved(
+    results: List[Dict[str, Any]],
+    policy_name: str,
+) -> None:
+    """CRITICAL ASSERTION: Policy definition must be in retrieved results.
+
+    Args:
+        results: Retrieved documents
+        policy_name: Name of policy to find (e.g., "Family Leave Pool Policy")
+    
+    Raises:
+        AssertionError: If policy is not in retrieved docs (crashes loudly)
+    """
+    policy_sources = [
+        r.get("metadata", {}).get("source", "")
+        for r in results
+        if isinstance(r.get("metadata"), dict)
+    ]
+
+    found = any(policy_name.lower() in src.lower() for src in policy_sources)
+
+    if not found:
+        error_msg = (
+            f"\n{'='*80}\n"
+            f"❌ CRITICAL: EXPECTED POLICY NOT RETRIEVED\n"
+            f"{'='*80}\n"
+            f"Policy: {policy_name}\n"
+            f"Retrieved {len(results)} results:\n"
+        )
+        for i, r in enumerate(results[:5], 1):
+            src = r.get("metadata", {}).get("source", "?") if isinstance(r.get("metadata"), dict) else "?"
+            distance = r.get("distance", "?")
+            error_msg += f"  {i}. {src} (distance={distance:.4f})\n"
+    
+        if len(results) > 5:
+            error_msg += f"  ... and {len(results) - 5} more\n"
+    
+        error_msg += (
+            f"\nDiagnosis:\n"
+            f"1. Check that policy PDF is in ingestion pipeline\n"
+            f"2. Verify metadata 'source' field is set correctly\n"
+            f"3. Check EMBEDDING_MODE: {'mock (random)' if EMBEDDING_MODE == 'mock' else 'OpenAI'}\n"
+            f"4. Try increasing k (top_k parameter) to retrieve more results\n"
+            f"{'='*80}\n"
+        )
+        LOGGER.error(error_msg)
+        raise AssertionError(error_msg)
+    else:
+        LOGGER.debug(f"✓ Policy '{policy_name}' found in retrieved results at rank {next(i for i, s in enumerate(policy_sources, 1) if policy_name.lower() in s.lower())}")
 
 
 if __name__ == "__main__":
