@@ -249,8 +249,12 @@ def create_ui():
     ) as demo:
         gr.Markdown(
             """
+        <style>
+            h1 { color: white !important; }
+            .gradio-markdown h1 { color: white !important; }
+        </style>
         <div style="background: linear-gradient(135deg, #004B87 0%, #003366 100%); padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-            <h1 style="color: white; text-align: center; margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); font-weight: 800; letter-spacing: 0.5px;">UTA Policies Agent</h1>
+            <h1 style="color: white !important; background: none !important; text-align: center; margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: 900; letter-spacing: 0.5px;">UTA Policies Agent</h1>
             <p style="color: #FFB81C; text-align: center; margin-top: 12px; font-size: 18px; font-weight: 600;">
                 Intelligent HR Policy Assistant
             </p>
@@ -598,4 +602,21 @@ def run_startup_tests():
 if __name__ == "__main__":
     run_startup_tests()
     demo, launch_kwargs = create_ui()
-    demo.launch(server_name="127.0.0.1", server_port=7900, share=False, **launch_kwargs)
+    
+    # Use environment variable for port, default to 7900, find alternative if busy
+    import os
+    port = int(os.getenv("GRADIO_SERVER_PORT", 7900))
+    try:
+        demo.launch(server_name="127.0.0.1", server_port=port, share=False, **launch_kwargs)
+    except OSError:
+        # If port is busy, try nearby ports
+        print(f"⚠️ Port {port} busy, trying alternative ports...")
+        for alt_port in [7860, 7861, 7862, 7863, 7864]:
+            try:
+                demo.launch(server_name="127.0.0.1", server_port=alt_port, share=False, **launch_kwargs)
+                break
+            except OSError:
+                continue
+        else:
+            print("❌ Could not find available port")
+            raise
