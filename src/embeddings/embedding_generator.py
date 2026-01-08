@@ -70,13 +70,22 @@ def _call_embeddings_batch(
         try:
             attempt += 1
             LOGGER.debug("Embedding batch call attempt %d, size=%d", attempt, len(inputs))
-            # openai.Embedding.create accepts `input` as list of strings
+            # Use new OpenAI client API (OpenAI().embeddings.create)
+            from openai import OpenAI
+            api_key = os.getenv("OPENAI_API_KEY")
+            client = OpenAI(api_key=api_key)
             kwargs: Dict[str, Any] = {"model": model, "input": inputs}
             if timeout is not None:
-                kwargs["request_timeout"] = timeout
-            resp = openai.Embedding.create(**kwargs)
-            data = resp.get("data") or []
-            embeddings = [d["embedding"] for d in data]
+                kwargs["timeout"] = timeout
+            resp = client.embeddings.create(**kwargs)
+            data = getattr(resp, "data", []) or resp.get("data", [])
+            # resp.data items may be dict-like or objects; support both
+            embeddings = []
+            for d in data:
+                if isinstance(d, dict):
+                    embeddings.append(d.get("embedding"))
+                else:
+                    embeddings.append(getattr(d, "embedding", None))
             if len(embeddings) != len(inputs):
                 LOGGER.warning(
                     "Embeddings returned length mismatch: got %d embeddings for %d inputs",

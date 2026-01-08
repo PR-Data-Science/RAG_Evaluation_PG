@@ -34,6 +34,7 @@ from src.retrieval.faiss_retriever import (
     audit_retrieval,
 )
 from src.openai_utils import call_openai_with_system_user_prompt
+from src.evaluation.run_eval import evaluate as run_batch_evaluation
 
 
 LOGS_DIR = Path("logs")
@@ -281,6 +282,16 @@ def create_ui():
                     label="Top-K Results",
                 )
 
+        # Testset selector (global for evaluation tabs)
+        testset_selector = gr.Dropdown(
+            choices=[
+                ("Default testset (rag_eval_testset.json)", "data/rag_eval_testset.json"),
+                ("Expanded testset v2 (rag_eval_testset_v2.json)", "data/rag_eval_testset_v2.json"),
+            ],
+            value="data/rag_eval_testset_v2.json",
+            label="Select evaluation testset",
+        )
+
         run_button = gr.Button("🔍 Run RAG Pipeline", variant="primary", size="lg")
 
         with gr.Tabs():
@@ -327,6 +338,21 @@ def create_ui():
                     interactive=False,
                 )
 
+            # Tab 5: Full Testset Evaluation
+            with gr.TabItem("📈 Full Evaluation", id="full_eval_tab"):
+                with gr.Row():
+                    run_eval_button = gr.Button("🧾 Run Full Evaluation", variant="secondary")
+                    eval_k_slider = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="Max top-K to evaluate (runs for k in [3,4,...,K])")
+
+                eval_summary_table = gr.Dataframe(
+                    headers=["top_k", "queries", "mean_recall", "mean_precision", "mean_mrr", "mean_ndcg", "mean_confidence"],
+                    datatype=["str", "str", "str", "str", "str", "str", "str"],
+                    label="Aggregated metrics per top_k",
+                    interactive=False,
+                )
+
+                per_query_results = gr.Code(label="Per-query Results (JSON)", language="json", interactive=False)
+
         # Wire up the run button
         def on_run(query: str, k: int):
             if not query.strip():
@@ -338,6 +364,76 @@ def create_ui():
             inputs=[query_input, top_k_slider],
             outputs=[answer_output, context_output, retrieval_table, eval_output, warnings_output],
         )
+
+        def on_run_full_eval(max_k: int, testset_path: str):
+            """Run the batch evaluation over top_k values and return summary table + per-query JSON."""
+            try:
+                # Build top_k list from 3 up to max_k (inclusive)
+                top_k_list = list(range(3, max_k + 1))
+                results = run_batch_evaluation(testset_path=testset_path, top_k_list=top_k_list)
+
+                # results: dict top_k -> (summary, per_query_results)
+                table_rows = []
+                per_query_full = {}
+                for k, (summary, per_q) in results.items():
+                    row = [
+                        str(k),
+                        str(summary.get("queries", 0)),
+                        f"{summary.get('mean_recall@k', 0.0):.4f}",
+                        f"{summary.get('mean_precision@k', 0.0):.4f}",
+                        f"{summary.get('mean_mrr', 0.0):.4f}",
+                        f"{summary.get('mean_ndcg@k', 0.0):.4f}",
+                        f"{summary.get('mean_confidence'):.4f}" if summary.get('mean_confidence') is not None else "N/A",
+                    ]
+                    table_rows.append(row)
+                    per_query_full[str(k)] = per_q
+
+                import json
+                return table_rows, json.dumps(per_query_full, indent=2)
+            except Exception as e:
+                return [], f"{{\"error\": \"{str(e)}\"}}"
+
+        run_eval_button.click(on_run_full_eval, inputs=[eval_k_slider, testset_selector], outputs=[eval_summary_table, per_query_results])
+
+        # Tab 6: Run Testset (single K)
+        with gr.TabItem("🔬 Run Testset", id="single_test_tab"):
+            with gr.Row():
+                single_k_slider = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="Select K (Top-K)")
+                run_single_button = gr.Button("▶️ Run Testset for K", variant="primary")
+
+            single_summary = gr.Dataframe(
+                headers=["metric", "value"],
+                datatype=["str", "str"],
+                label="Summary Metrics",
+                interactive=False,
+            )
+
+            single_per_query = gr.Code(label="Per-query Results (JSON)", language="json", interactive=False)
+
+        def on_run_single_k(k: int, testset_path: str):
+            try:
+                results = run_batch_evaluation(testset_path=testset_path, top_k_list=[int(k)])
+                # results is dict {k: (summary, per_query_results)}
+                val = results.get(int(k))
+                if not val:
+                    raise RuntimeError(f"No results returned for k={k}")
+                summary, per_q = val
+
+                # Build simple key/value rows
+                rows = [
+                    ["queries", str(summary.get("queries", 0))],
+                    [f"mean_recall@{k}", f"{summary.get('mean_recall@k', 0.0):.4f}"],
+                    [f"mean_precision@{k}", f"{summary.get('mean_precision@k', 0.0):.4f}"],
+                    ["mean_mrr", f"{summary.get('mean_mrr', 0.0):.4f}"],
+                    [f"mean_ndcg@{k}", f"{summary.get('mean_ndcg@k', 0.0):.4f}"],
+                    ["mean_confidence", f"{summary.get('mean_confidence'):.4f}" if summary.get('mean_confidence') is not None else "N/A"],
+                ]
+                import json
+                return rows, json.dumps(per_q, indent=2)
+            except Exception as e:
+                return [], f"{{\"error\": \"{str(e)}\"}}"
+
+        run_single_button.click(on_run_single_k, inputs=[single_k_slider, testset_selector], outputs=[single_summary, single_per_query])
 
         gr.Markdown(
             """
