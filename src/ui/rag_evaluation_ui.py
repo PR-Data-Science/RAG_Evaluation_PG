@@ -33,6 +33,7 @@ from src.retrieval.faiss_retriever import (
     retrieve_top_k,
     audit_retrieval,
 )
+from src.retrieval.faiss_retriever import set_embedding_mode, get_embedding_mode
 from src.openai_utils import call_openai_with_system_user_prompt
 from src.evaluation.run_eval import evaluate as run_batch_evaluation
 
@@ -266,6 +267,23 @@ def create_ui():
         """
         )
 
+        # Display active embedding mode for operator transparency
+        import os as _os
+        _mode = _os.getenv("EMBEDDING_MODE", "mock").lower()
+        _mode_label = {
+            "tfidf": "TF-IDF (local vectorizer)",
+            "openai": "OpenAI embeddings (text-embedding-3-large)",
+            "mock": "Mock / deterministic embeddings",
+        }.get(_mode, _mode)
+
+        gr.Markdown(
+            f"""
+            <div style="text-align:center; margin-bottom:12px;">
+                <strong>Active Embedding Mode:</strong> {_mode_label} <span style="color:#E8F1F8;">({_mode})</span>
+            </div>
+            """
+        )
+
         with gr.Row():
             with gr.Column(scale=3):
                 query_input = gr.Textbox(
@@ -290,6 +308,17 @@ def create_ui():
             ],
             value="data/rag_eval_testset_v2.json",
             label="Select evaluation testset",
+        )
+
+        # Embedding mode selector (global control)
+        embedding_mode_selector = gr.Dropdown(
+            choices=[
+                ("Mock / deterministic embeddings", "mock"),
+                ("TF-IDF (local vectorizer)", "tfidf"),
+                ("OpenAI semantic embeddings", "openai"),
+            ],
+            value=os.getenv("EMBEDDING_MODE", "mock").lower(),
+            label="Embedding Mode",
         )
 
         run_button = gr.Button("🔍 Run RAG Pipeline", variant="primary", size="lg")
@@ -354,20 +383,30 @@ def create_ui():
                 per_query_results = gr.Code(label="Per-query Results (JSON)", language="json", interactive=False)
 
         # Wire up the run button
-        def on_run(query: str, k: int):
+        def on_run(query: str, k: int, mode: str):
             if not query.strip():
                 return "", "Please enter a query", [], "{}", "Query cannot be empty"
+            # Apply selected embedding mode at runtime
+            try:
+                set_embedding_mode(mode)
+            except Exception:
+                pass
             return run_rag_pipeline(query, k)
 
         run_button.click(
             on_run,
-            inputs=[query_input, top_k_slider],
+            inputs=[query_input, top_k_slider, embedding_mode_selector],
             outputs=[answer_output, context_output, retrieval_table, eval_output, warnings_output],
         )
 
-        def on_run_full_eval(max_k: int, testset_path: str):
+        def on_run_full_eval(max_k: int, testset_path: str, mode: str):
             """Run the batch evaluation over top_k values and return summary table + per-query JSON."""
             try:
+                # ensure embedding mode is applied for batch evaluation
+                try:
+                    set_embedding_mode(mode)
+                except Exception:
+                    pass
                 # Build top_k list from 3 up to max_k (inclusive)
                 top_k_list = list(range(3, max_k + 1))
                 results = run_batch_evaluation(testset_path=testset_path, top_k_list=top_k_list)
@@ -393,7 +432,7 @@ def create_ui():
             except Exception as e:
                 return [], f"{{\"error\": \"{str(e)}\"}}"
 
-        run_eval_button.click(on_run_full_eval, inputs=[eval_k_slider, testset_selector], outputs=[eval_summary_table, per_query_results])
+        run_eval_button.click(on_run_full_eval, inputs=[eval_k_slider, testset_selector, embedding_mode_selector], outputs=[eval_summary_table, per_query_results])
 
         # Tab 6: Run Testset (single K)
         with gr.TabItem("🔬 Run Testset", id="single_test_tab"):
@@ -410,8 +449,12 @@ def create_ui():
 
             single_per_query = gr.Code(label="Per-query Results (JSON)", language="json", interactive=False)
 
-        def on_run_single_k(k: int, testset_path: str):
+        def on_run_single_k(k: int, testset_path: str, mode: str):
             try:
+                try:
+                    set_embedding_mode(mode)
+                except Exception:
+                    pass
                 results = run_batch_evaluation(testset_path=testset_path, top_k_list=[int(k)])
                 # results is dict {k: (summary, per_query_results)}
                 val = results.get(int(k))
@@ -433,7 +476,7 @@ def create_ui():
             except Exception as e:
                 return [], f"{{\"error\": \"{str(e)}\"}}"
 
-        run_single_button.click(on_run_single_k, inputs=[single_k_slider, testset_selector], outputs=[single_summary, single_per_query])
+        run_single_button.click(on_run_single_k, inputs=[single_k_slider, testset_selector, embedding_mode_selector], outputs=[single_summary, single_per_query])
 
         gr.Markdown(
             """
@@ -702,14 +745,17 @@ if __name__ == "__main__":
     # Use environment variable for port, default to 7900, find alternative if busy
     import os
     port = int(os.getenv("GRADIO_SERVER_PORT", 7900))
+    # Allow creating a public Gradio share link by setting GRADIO_SHARE=true in env
+    share_env = os.getenv("GRADIO_SHARE", "false").lower()
+    share_flag = True if share_env in ("1", "true", "yes") else False
     try:
-        demo.launch(server_name="127.0.0.1", server_port=port, share=False, **launch_kwargs)
+        demo.launch(server_name="127.0.0.1", server_port=port, share=share_flag, **launch_kwargs)
     except OSError:
         # If port is busy, try nearby ports
         print(f"⚠️ Port {port} busy, trying alternative ports...")
         for alt_port in [7860, 7861, 7862, 7863, 7864]:
             try:
-                demo.launch(server_name="127.0.0.1", server_port=alt_port, share=False, **launch_kwargs)
+                demo.launch(server_name="127.0.0.1", server_port=alt_port, share=share_flag, **launch_kwargs)
                 break
             except OSError:
                 continue

@@ -46,6 +46,30 @@ def _get_openai_client():
     return _openai_client
 
 
+def set_embedding_mode(mode: str) -> None:
+    """Dynamically set the embedding mode at runtime.
+
+    Supported values: 'mock', 'tfidf', 'openai'. This updates the module
+    global and resets any cached clients when switching modes.
+    """
+    global EMBEDDING_MODE, _openai_client
+    if not isinstance(mode, str):
+        raise ValueError("mode must be a string")
+    mode = mode.lower()
+    if mode not in ("mock", "tfidf", "openai"):
+        raise ValueError("EMBEDDING_MODE must be 'mock', 'tfidf' or 'openai'")
+    if EMBEDDING_MODE != mode:
+        EMBEDDING_MODE = mode
+        # Reset OpenAI client cache when changing modes to avoid cross-mode state
+        _openai_client = None
+        LOGGER.info(f"Embedding mode changed to '{EMBEDDING_MODE}' at runtime")
+
+
+def get_embedding_mode() -> str:
+    """Return the current embedding mode string."""
+    return EMBEDDING_MODE
+
+
 INDEX_FILENAME_CANDIDATES = [Path("faiss_index_openai.index"), Path("faiss_index.index"), Path("faiss_index") / "faiss_index.index"]
 DOCUMENTS_PATH = Path("temp_storage") / "03_embedded_documents.json"
 METADATA_PATH = Path("temp_storage") / "04_metadata_mapping.json"
@@ -143,7 +167,9 @@ def load_retrieval_assets(index_path: Path | None = None) -> Tuple[faiss.Index, 
         # Normalize to unit length for cosine-like inner product
         faiss.normalize_L2(xb)
 
-        index = faiss.IndexFlatIP(EMBED_DIM)
+        # Use the actual embedding dimensionality when building the index
+        dim = int(xb.shape[1])
+        index = faiss.IndexFlatIP(dim)
         index.add(xb)
 
     # Basic consistency check
@@ -310,7 +336,8 @@ def retrieve_top_k(
 
         xb = np.vstack(vecs).astype(np.float32)
         faiss.normalize_L2(xb)
-        temp_index = faiss.IndexFlatIP(EMBED_DIM)
+        temp_dim = int(xb.shape[1])
+        temp_index = faiss.IndexFlatIP(temp_dim)
         temp_index.add(xb)
 
         topk = min(k, int(temp_index.ntotal))
