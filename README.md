@@ -1,2 +1,2 @@
-# HR_Policies_Agent_RAG
-This project is to build a agent to answer the HR policies based questions and to check the accuracy of the model by using a RAG architecture.
+# RAG_Evaluation_PG
+This project builds an agent to answer HR policy questions and evaluate model accuracy using a RAG architecture.
